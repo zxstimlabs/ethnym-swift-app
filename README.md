@@ -48,6 +48,7 @@ Debug builds accept launch arguments that swap in an in-memory model, leaving th
   - `AddressBook/`, `Activity/`, `Backup/`, `Settings/`: the other tabs.
   - `Components/`, `Theme/`: shared views, JetBrains Mono and the black-and-white theme.
   - `Fonts/`: JetBrains Mono (SIL Open Font License, see `OFL.txt`).
+  - `AppIcon.icon`: the app icon, an Icon Composer file. Xcode generates the flat icons for iOS 18 from it.
   - `Preview Content/`: demo data for previews and `-demo`, debug builds only.
 - `Packages/EthnymKit/`: all non-UI logic, with tests. It also lists macOS as a platform so `swift test` runs on the Mac.
   - `Crypto/`: keystores, backups, BIP-39 / BIP-32 derivation and wallet operations.
