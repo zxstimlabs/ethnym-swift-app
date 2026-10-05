@@ -32,8 +32,8 @@ enum DemoData {
     ]
 
     @MainActor
-    static func model(wallets: [WalletKeystore] = [watchOnly, hardhat]) -> AppModel {
-        .inMemory(wallets: wallets, contacts: contacts, activity: activity)
+    static func model(wallets: [WalletKeystore] = [watchOnly, hardhat], chain: Chain = .mainnet) -> AppModel {
+        .inMemory(wallets: wallets, contacts: contacts, activity: activity, chain: chain)
     }
 }
 #endif

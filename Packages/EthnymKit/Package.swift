@@ -25,7 +25,6 @@ let package = Package(
                 .product(name: "libsecp256k1", package: "swift-secp256k1"),
                 .product(name: "BigInt", package: "BigInt"),
             ],
-            resources: [.process("Resources")],
             swiftSettings: [
                 .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
                 .enableUpcomingFeature("InferIsolatedConformances"),

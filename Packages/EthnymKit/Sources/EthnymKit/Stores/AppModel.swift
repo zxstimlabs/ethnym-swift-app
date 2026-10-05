@@ -32,19 +32,19 @@ public final class AppModel {
     }
 
     /// Keystores in the Keychain, everything else in Application Support.
-    public static func live() -> AppModel {
+    public static func live(chain: Chain = .mainnet) -> AppModel {
         let files = FileStorage.applicationSupport
         return AppModel(
             wallets: WalletStore(storage: KeychainStorage(service: "com.ethnym.wallets"), preferences: files),
             contacts: ContactStore(storage: files),
-            settings: SettingsStore(storage: files),
+            settings: SettingsStore(storage: files, chain: chain),
             assets: AssetStore(storage: files),
             activity: ActivityStore(storage: files)
         )
     }
 
     /// Nothing persisted; for previews and tests.
-    public static func inMemory(wallets: [WalletKeystore] = [], contacts: [Contact] = [], activity: [ActivityRecord] = [], settings: WalletSettings = WalletSettings()) -> AppModel {
+    public static func inMemory(wallets: [WalletKeystore] = [], contacts: [Contact] = [], activity: [ActivityRecord] = [], settings: WalletSettings = WalletSettings(), chain: Chain = .mainnet) -> AppModel {
         let storage = InMemoryStorage()
         try? storage.encode(wallets, for: WalletStore.walletsKey)
         try? storage.encode(contacts, for: ContactStore.key)
@@ -54,7 +54,7 @@ public final class AppModel {
         return AppModel(
             wallets: WalletStore(storage: storage, preferences: storage),
             contacts: ContactStore(storage: storage),
-            settings: SettingsStore(storage: storage),
+            settings: SettingsStore(storage: storage, chain: chain),
             assets: AssetStore(storage: storage),
             activity: ActivityStore(storage: storage)
         )

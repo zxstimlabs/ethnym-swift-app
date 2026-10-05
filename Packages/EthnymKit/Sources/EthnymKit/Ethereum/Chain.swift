@@ -22,6 +22,12 @@ public struct Chain: Hashable, Sendable, Identifiable {
         defaultRPC: URL(string: "https://ethereum-rpc.publicnode.com")!
     )
 
+    /// The same chain with another default endpoint, or nil when `rpc` isn't a usable http(s) URL.
+    public func withDefaultRPC(_ rpc: String) -> Chain? {
+        guard RpcValidation.validateURL(rpc) == nil, let url = URL(string: rpc.trimmed) else { return nil }
+        return Chain(id: id, name: name, nativeCurrency: nativeCurrency, explorer: explorer, defaultRPC: url)
+    }
+
     public func transactionURL(_ hash: String) -> URL {
         explorer.appending(path: "tx/\(hash)")
     }

@@ -8,3 +8,6 @@ xcuserdata/
 DerivedData/
 .build/
 .swiftpm/
+
+# Local settings such as your own default RPC endpoint. See README.
+App/Secrets.plist

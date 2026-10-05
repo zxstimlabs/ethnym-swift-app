@@ -64,28 +64,14 @@ public struct OwnedNft: Hashable, Sendable, Identifiable {
     public var id: String { "\(collection.asset.address.lowercased())-\(tokenId)" }
 }
 
-/// The bundled token and NFT lists.
+/// The verified token and NFT lists, compiled in from Lists/TokenList.swift and Lists/NftList.swift.
 public enum AssetLists {
-    /// The placeholder the token list uses for native ether.
-    static let etherSentinel = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-
-    private struct TokenList: Decodable { var tokens: [Token] }
-    private struct NftList: Decodable { var collections: [NftCollection] }
-
     public static func bundledTokens(chainId: Int = Chain.mainnet.id) -> [Token] {
-        guard let url = Bundle.module.url(forResource: "token-list", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let list = try? JSONDecoder().decode(TokenList.self, from: data)
-        else { return [] }
-        return list.tokens.filter { $0.chainId == chainId && $0.address.isHexAddress && $0.address.lowercased() != etherSentinel }
+        tokens.filter { $0.chainId == chainId }
     }
 
     public static func bundledCollections(chainId: Int = Chain.mainnet.id) -> [NftCollection] {
-        guard let url = Bundle.module.url(forResource: "nft-list", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let list = try? JSONDecoder().decode(NftList.self, from: data)
-        else { return [] }
-        return list.collections.filter { $0.chainId == chainId && $0.address.isHexAddress }
+        collections.filter { $0.chainId == chainId }
     }
 
     /// Verified list entries first, then custom entries the list doesn't already cover.

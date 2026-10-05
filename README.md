@@ -20,6 +20,10 @@ open Ethnym.xcodeproj
 
 Run the `Ethnym` scheme.
 
+Local settings live in `App/Secrets.plist`, which is git-ignored. `xcodegen generate` creates it from the committed `App/Secrets.example.plist` when it's missing, and never overwrites it. Set `ETHEREUM_RPC_URL` there to use your own RPC endpoint as the default instead of `ethereum-rpc.publicnode.com`. Add any new key to the example too, with an empty value.
+
+The URL is built into the app, so anyone with the build can read it. RPCs saved in Settings still take priority, and "Reset to Default" goes back to this one.
+
 The `.xcodeproj` is generated and not committed. Edit `project.yml` instead, and run `xcodegen generate` again after adding or removing files.
 
 ## Tests

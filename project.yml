@@ -4,6 +4,8 @@ options:
   deploymentTarget:
     iOS: "18.0"
   createIntermediateGroups: true
+  # The git-ignored App/Secrets.plist starts as a copy of the committed example. See README.
+  preGenCommand: "[ -f App/Secrets.plist ] || cp App/Secrets.example.plist App/Secrets.plist"
 
 settings:
   base:
@@ -26,7 +28,9 @@ targets:
   Ethnym:
     type: application
     platform: iOS
-    sources: [App]
+    sources:
+      - path: App
+        excludes: [Secrets.example.plist]
     dependencies:
       - package: EthnymKit
       - package: BigInt

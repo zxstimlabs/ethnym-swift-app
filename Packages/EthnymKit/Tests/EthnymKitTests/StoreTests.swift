@@ -72,6 +72,25 @@ struct StoreTests {
         #expect(store.rpcURL == Chain.mainnet.defaultRPC)
     }
 
+    @Test func `a configured default RPC replaces the built-in one`() throws {
+        #expect(Chain.mainnet.withDefaultRPC("") == nil)
+        #expect(Chain.mainnet.withDefaultRPC("ws://nope") == nil)
+
+        let chain = try #require(Chain.mainnet.withDefaultRPC(" https://rpc.example.com/key "))
+        let store = SettingsStore(storage: InMemoryStorage(), chain: chain)
+        #expect(store.rpcURL == URL(string: "https://rpc.example.com/key"))
+        #expect(store.settings.rpcList.isEmpty)
+    }
+
+    @Test func `bundled lists hold valid, unique addresses`() {
+        #expect(!AssetLists.bundledTokens().isEmpty)
+        #expect(!AssetLists.bundledCollections().isEmpty)
+        for addresses in [AssetLists.tokens.map(\.address), AssetLists.collections.map(\.address)] {
+            #expect(addresses.allSatisfy { $0.isHexAddress })
+            #expect(Set(addresses.map { $0.lowercased() }).count == addresses.count)
+        }
+    }
+
     @Test func `custom assets merge after the verified list`() {
         let listed = Token(address: "0x1111111111111111111111111111111111111111", name: "Listed", symbol: "L", decimals: 18)
         let store = AssetStore(storage: InMemoryStorage(), listedTokens: [listed], listedCollections: [])

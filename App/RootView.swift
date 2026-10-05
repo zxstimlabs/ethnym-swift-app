@@ -35,20 +35,30 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            Tab("Home", systemImage: "wallet.bifold", value: .home) {
+            Tab(value: .home) {
                 HomeView()
+            } label: {
+                TabLabel("Home", symbol: "wallet.bifold")
             }
-            Tab("Address Book", systemImage: "person.crop.rectangle.stack", value: .addressBook) {
+            Tab(value: .addressBook) {
                 AddressBookView()
+            } label: {
+                TabLabel("Address Book", symbol: "person.crop.rectangle.stack")
             }
-            Tab("Activity", systemImage: "list.bullet.rectangle", value: .activity) {
+            Tab(value: .activity) {
                 ActivityView()
+            } label: {
+                TabLabel("Activity", symbol: "list.bullet.rectangle")
             }
-            Tab("Backup", systemImage: "externaldrive", value: .backup) {
+            Tab(value: .backup) {
                 BackupView()
+            } label: {
+                TabLabel("Backup", symbol: "externaldrive")
             }
-            Tab("Settings", systemImage: "gearshape", value: .settings) {
+            Tab(value: .settings) {
                 SettingsView()
+            } label: {
+                TabLabel("Settings", symbol: "gearshape")
             }
         }
         .tint(.primary)
@@ -58,6 +68,36 @@ struct RootView: View {
         .task(id: app.balanceContext) {
             await app.refreshBalances()
         }
+    }
+}
+
+/// A tab bar icon. The title isn't shown, but VoiceOver and the UI tests use it.
+private struct TabLabel: View {
+    let title: LocalizedStringKey
+    let symbol: String
+
+    init(_ title: LocalizedStringKey, symbol: String) {
+        self.title = title
+        self.symbol = symbol
+    }
+
+    var body: some View {
+        Label { Text(title) } icon: { icon }
+            .labelStyle(.iconOnly)
+    }
+
+    /// Before iOS 26 the tab bar places symbols as if a title sat under them, which leaves icon-only
+    /// tabs against its top edge, but it centers plain images. So there the symbol is drawn into one
+    /// at the bar's own symbol size, filled like the bar fills symbols. iOS 26's Liquid Glass bar
+    /// centers symbols itself.
+    private var icon: Image {
+        if #available(iOS 26, *) { return Image(systemName: symbol) }
+        let configuration = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium, scale: .large)
+        guard let image = UIImage(systemName: "\(symbol).fill", withConfiguration: configuration) else {
+            return Image(systemName: symbol)
+        }
+        let flat = UIGraphicsImageRenderer(size: image.size).image { _ in image.draw(at: .zero) }
+        return Image(uiImage: flat.withRenderingMode(.alwaysTemplate))
     }
 }
 

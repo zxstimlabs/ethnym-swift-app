@@ -10,7 +10,7 @@ enum Theme {
         CTFontManagerRegisterFontURLs(urls as CFArray, .process, true, nil)
     }
 
-    /// Fonts for the UIKit chrome SwiftUI doesn't reach: navigation bars, tab bar, segmented pickers.
+    /// Fonts and colors for the UIKit chrome SwiftUI doesn't reach: navigation bars, tab bar, segmented pickers.
     static func configureAppearance() {
         let navigation = UINavigationBarAppearance()
         navigation.configureWithDefaultBackground()
@@ -35,10 +35,9 @@ enum Theme {
         UIWindow.appearance().tintColor = .label
         UITabBar.appearance().tintColor = .label
 
+        // The tab bar shows icons only, so its items need colors but no title fonts.
         let tabItem = UITabBarItemAppearance()
-        tabItem.normal.titleTextAttributes = [.font: JetBrainsMono.medium.uiFont(.caption2), .foregroundColor: UIColor.secondaryLabel]
         tabItem.normal.iconColor = .secondaryLabel
-        tabItem.selected.titleTextAttributes = [.font: JetBrainsMono.semiBold.uiFont(.caption2), .foregroundColor: UIColor.label]
         tabItem.selected.iconColor = .label
         let tabBar = UITabBarAppearance()
         tabBar.configureWithDefaultBackground()
@@ -47,7 +46,6 @@ enum Theme {
         tabBar.compactInlineLayoutAppearance = tabItem
         UITabBar.appearance().standardAppearance = tabBar
         UITabBar.appearance().scrollEdgeAppearance = tabBar
-        UITabBarItem.appearance().setTitleTextAttributes([.font: JetBrainsMono.medium.uiFont(.caption2)], for: .normal)
         UISegmentedControl.appearance().setTitleTextAttributes([.font: JetBrainsMono.medium.uiFont(.footnote)], for: .normal)
         UISegmentedControl.appearance().setTitleTextAttributes([.font: JetBrainsMono.semiBold.uiFont(.footnote)], for: .selected)
     }
