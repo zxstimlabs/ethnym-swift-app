@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "logo-light.svg",
+      "filename" : "ethnym-symbol-dark.svg",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "logo-dark.svg",
+      "filename" : "ethnym-symbol-light.svg",
       "idiom" : "universal"
     }
   ],

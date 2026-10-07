@@ -14,12 +14,32 @@ private struct PressFeedback: ViewModifier {
     }
 }
 
+/// Keeps the label on one line, clear of the edges, at any text size. Where it doesn't fit, as with
+/// two buttons side by side under large Dynamic Type, it gives up side padding first, then its
+/// icon, and only then shrinks the text, rather than breaking a word across lines. The icon sits
+/// close to the title, so a pair of buttons keeps both icons as long as it can.
+private struct FittingLabel: View {
+    let label: ButtonStyleConfiguration.Label
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            label.padding(.horizontal, 20)
+            label.padding(.horizontal, 12)
+            label.labelStyle(.titleOnly).padding(.horizontal, 12)
+            label.labelStyle(.titleOnly).minimumScaleFactor(0.5).padding(.horizontal, 8)
+        }
+        .labelStyle(.adaptive(iconOnly: false))
+        .lineLimit(1)
+        .padding(.vertical, 12)
+    }
+}
+
 /// Solid black on light, solid white on dark. For the one primary action on a screen.
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        FittingLabel(label: configuration.label)
             .font(.mono(.body, weight: .semibold))
             .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(Color(.systemBackground))
@@ -34,7 +54,7 @@ struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        FittingLabel(label: configuration.label)
             .font(.mono(.body, weight: .medium))
             .frame(maxWidth: .infinity, minHeight: 50)
             .foregroundStyle(Color.primary.opacity(isEnabled ? 1 : 0.3))

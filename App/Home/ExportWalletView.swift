@@ -4,7 +4,6 @@ import SwiftUI
 /// Saves keystore files and reveals the active wallet's secret phrase.
 struct ExportWalletView: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
     @State private var export: PendingExport?
     @State private var exportError: String?
 
@@ -50,11 +49,7 @@ struct ExportWalletView: View {
             }
             .navigationTitle("Export")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .flowToolbar()
             .fileExporter(
                 isPresented: Binding(get: { export != nil }, set: { if !$0 { export = nil } }),
                 document: export?.file,

@@ -25,7 +25,11 @@ extension View {
     }
 }
 
-/// The ETHnym logo, drawn as is. The Logo image set has a light and a dark SVG.
+/// The ETHnym logo, drawn as is.
+///
+/// Note: the Logo image set swaps the files on purpose. Light mode shows `ethnym-symbol-dark.svg`
+/// (black tile) and dark mode shows `ethnym-symbol-light.svg` (white tile), so the tile stands out
+/// from the background instead of blending into it.
 private struct AppLogo: View {
     var body: some View {
         Image("Logo")

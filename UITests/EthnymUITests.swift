@@ -95,10 +95,18 @@ final class EthnymUITests: XCTestCase {
         app.buttons["Manage"].tap()
         XCTAssertTrue(app.buttons["Create Wallet"].waitForExistence(timeout: 2))
         snapshot(app, "06-manage")
-        // Choosing an action swaps the pop-up for that screen.
+        // Choosing an action opens that screen full screen over the pop-up. Back returns to the
+        // pop-up; X closes both.
         app.buttons["Create Wallet"].tap()
         XCTAssertTrue(app.textFields["Wallet name"].waitForExistence(timeout: 3))
-        app.buttons["Cancel"].tap()
+        snapshot(app, "06-manage-create")
+        app.navigationBars.buttons["Back"].tap()
+        XCTAssertTrue(app.buttons["Import Wallet"].waitForExistence(timeout: 3))
+        app.buttons["Import Wallet"].tap()
+        XCTAssertTrue(app.textFields["Wallet name"].waitForExistence(timeout: 3))
+        app.navigationBars.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["Import Wallet"].waitForNonExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Manage"].isHittable)
 
         reveal(app.buttons["NFTs"], in: app).tap()
         sleep(2)
@@ -128,7 +136,7 @@ final class EthnymUITests: XCTestCase {
     @MainActor
     func testCreateWallet() {
         let app = launch(["-empty"])
-        app.buttons["Create Wallet"].firstMatch.tap()
+        app.buttons["Create"].firstMatch.tap()
 
         let name = app.textFields["Wallet name"]
         XCTAssertTrue(name.waitForExistence(timeout: 3))
@@ -150,7 +158,7 @@ final class EthnymUITests: XCTestCase {
     func testImportPhraseAndSignOffline() {
         // Offline from launch: this test must never be able to broadcast.
         let app = launch(["-empty", "-offline"])
-        app.buttons["Import Wallet"].firstMatch.tap()
+        app.buttons["Import"].firstMatch.tap()
 
         let name = app.textFields["Wallet name"]
         XCTAssertTrue(name.waitForExistence(timeout: 3))

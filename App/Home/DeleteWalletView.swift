@@ -4,7 +4,7 @@ import SwiftUI
 /// Deletes the active wallet once its password proves ownership.
 struct DeleteWalletView: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.flowExit) private var flowExit
     @State private var password = ""
     @State private var isConfirming = false
     @State private var isWorking = false
@@ -61,12 +61,7 @@ struct DeleteWalletView: View {
             }
             .navigationTitle("Delete Wallet")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", role: .cancel) { dismiss() }
-                }
-            }
-            .interactiveDismissDisabled(isWorking)
+            .flowToolbar()
             .sensoryFeedback(.error, trigger: error) { _, new in new != nil }
         }
     }
@@ -79,7 +74,7 @@ struct DeleteWalletView: View {
             do {
                 _ = try await WalletCrypto.unlock(wallet, password: password)
                 withAnimation(.house) { app.wallets.delete(wallet) }
-                dismiss()
+                flowExit.close()
             } catch {
                 self.error = "Wrong password. Please try again."
             }

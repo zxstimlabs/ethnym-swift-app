@@ -34,7 +34,7 @@ struct BalancesSection: View {
             .sensoryFeedback(.selection, trigger: kind)
 
             if app.wallets.activeWallet == nil {
-                Text("Select a wallet to see its balances.")
+                Text(app.wallets.wallets.isEmpty ? "Create or import a wallet to see its balances." : "Select a wallet to see its balances.")
                     .font(.mono(.footnote))
                     .foregroundStyle(.secondary)
             } else {

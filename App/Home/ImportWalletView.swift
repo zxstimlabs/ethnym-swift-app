@@ -12,7 +12,6 @@ struct ImportWalletView: View {
         var id: Self { self }
     }
 
-    @Environment(\.dismiss) private var dismiss
     @State private var method: Method = .phrase
 
     var body: some View {
@@ -35,11 +34,7 @@ struct ImportWalletView: View {
             }
             .navigationTitle("Import Wallet")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", role: .cancel) { dismiss() }
-                }
-            }
+            .flowToolbar()
             .sensoryFeedback(.selection, trigger: method)
         }
     }
@@ -49,7 +44,7 @@ struct ImportWalletView: View {
 
 private struct PhraseImport: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.flowExit) private var flowExit
 
     @State private var name = ""
     @State private var password = ""
@@ -133,7 +128,7 @@ private struct PhraseImport: View {
                 let wallet = try await WalletCrypto.importWallet(name: name, password: password, phrase: phrase)
                 if app.wallets.add(wallet) {
                     imported = true
-                    dismiss()
+                    flowExit.close()
                 } else {
                     error = "This wallet is already imported."
                 }
@@ -219,7 +214,7 @@ private struct KeystorePasteImport: View {
 private struct KeystoreImportSummary: View {
     let wallets: [WalletKeystore]
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.flowExit) private var flowExit
     @State private var message: String?
 
     var body: some View {
@@ -242,7 +237,7 @@ private struct KeystoreImportSummary: View {
                 Button("Import \(wallets.count == 1 ? "Wallet" : "\(wallets.count) Wallets")") {
                     let result = app.wallets.add(contentsOf: wallets)
                     if result.added > 0 {
-                        dismiss()
+                        flowExit.close()
                     } else {
                         message = "Already imported."
                     }

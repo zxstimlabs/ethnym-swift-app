@@ -4,10 +4,6 @@ import SwiftUI
 /// Wallets and balances: the web wallet's Home tab.
 struct HomeView: View {
     enum Sheet: String, Identifiable {
-        case create
-        case importWallet
-        case export
-        case delete
         case manage
         case receive
         case addToken
@@ -16,21 +12,39 @@ struct HomeView: View {
         var id: Self { self }
     }
 
+    /// Screens that take input, full screen so they can't be swiped away. Opened from Manage, or from
+    /// the Wallets card before the first wallet exists.
+    enum Flow: String, Identifiable {
+        case create
+        case importWallet
+        case export
+        case delete
+
+        var id: Self { self }
+
+        @ViewBuilder
+        var screen: some View {
+            switch self {
+            case .create: CreateWalletView()
+            case .importWallet: ImportWalletView()
+            case .export: ExportWalletView()
+            case .delete: DeleteWalletView()
+            }
+        }
+    }
+
     @Environment(AppModel.self) private var app
     @State private var sheet: Sheet?
+    @State private var flow: Flow?
 
     var body: some View {
         NavigationStack {
             List {
-                if app.wallets.wallets.isEmpty {
-                    WelcomeSection(sheet: $sheet)
-                } else {
-                    WalletSection(sheet: $sheet)
-                    if !app.wallets.walletsNeedingMigration.isEmpty {
-                        MigrationSection()
-                    }
-                    BalancesSection(sheet: $sheet)
+                WalletSection(sheet: $sheet, flow: $flow)
+                if !app.wallets.walletsNeedingMigration.isEmpty {
+                    MigrationSection()
                 }
+                BalancesSection(sheet: $sheet)
             }
             .animation(.house, value: app.wallets.activeWalletID)
             .animation(.house, value: app.wallets.wallets.count)
@@ -40,16 +54,16 @@ struct HomeView: View {
             .sheet(item: $sheet) { sheet in
                 content(for: sheet)
             }
+            .fullScreenCover(item: $flow) { flow in
+                flow.screen
+                    .environment(\.flowExit, FlowExit { self.flow = nil })
+            }
         }
     }
 
     @ViewBuilder
     private func content(for sheet: Sheet) -> some View {
         switch sheet {
-        case .create: CreateWalletView()
-        case .importWallet: ImportWalletView()
-        case .export: ExportWalletView()
-        case .delete: DeleteWalletView()
         case .manage: ManagePopUp(sheet: $sheet)
         case .receive: ReceiveView()
         case .addToken: AddCustomTokenView()
@@ -58,29 +72,12 @@ struct HomeView: View {
     }
 }
 
-/// Shown until the first wallet exists.
-private struct WelcomeSection: View {
-    @Binding var sheet: HomeView.Sheet?
-
-    var body: some View {
-        Section {
-            EmptyState("No wallets yet", systemImage: "wallet.bifold", message: "Create a new wallet or import an existing one to get started. Keys are encrypted with your password and never leave this device.") {
-                VStack(spacing: 10) {
-                    Button("Create Wallet") { sheet = .create }
-                        .buttonStyle(.primary)
-                    Button("Import Wallet") { sheet = .importWallet }
-                        .buttonStyle(.secondary)
-                }
-                .frame(maxWidth: 280)
-            }
-        }
-        .listRowBackground(Color.clear)
-    }
-}
-
 /// The wallet picker, the active address, and Receive / Manage. Balances are in their own section.
+/// Until the first wallet exists, a prompt and Create / Import take the same rows, so adding one
+/// barely moves the layout.
 private struct WalletSection: View {
     @Binding var sheet: HomeView.Sheet?
+    @Binding var flow: HomeView.Flow?
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -91,7 +88,13 @@ private struct WalletSection: View {
                 }
             }
 
-            WalletPicker()
+            if app.wallets.wallets.isEmpty {
+                Text("Create or import a wallet")
+                    .font(.mono(.title3, weight: .bold))
+                    .foregroundStyle(.secondary)
+            } else {
+                WalletPicker()
+            }
 
             VStack(alignment: .leading, spacing: 14) {
                 if let wallet = app.wallets.activeWallet {
@@ -104,22 +107,38 @@ private struct WalletSection: View {
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                // Manage stays with no wallet selected, to create or import one.
                 HStack(spacing: 10) {
-                    Button {
-                        sheet = .receive
-                    } label: {
-                        Label("Receive", systemImage: "qrcode")
-                    }
-                    .buttonStyle(.primary)
-                    .disabled(app.wallets.activeWallet == nil)
+                    if app.wallets.wallets.isEmpty {
+                        Button {
+                            flow = .create
+                        } label: {
+                            Label("Create", systemImage: "plus")
+                        }
+                        .buttonStyle(.primary)
 
-                    Button {
-                        sheet = .manage
-                    } label: {
-                        Label("Manage", systemImage: "ellipsis.circle")
+                        Button {
+                            flow = .importWallet
+                        } label: {
+                            Label("Import", systemImage: "square.and.arrow.down")
+                        }
+                        .buttonStyle(.secondary)
+                    } else {
+                        // Manage stays with no wallet selected, to create or import one.
+                        Button {
+                            sheet = .receive
+                        } label: {
+                            Label("Receive", systemImage: "qrcode")
+                        }
+                        .buttonStyle(.primary)
+                        .disabled(app.wallets.activeWallet == nil)
+
+                        Button {
+                            sheet = .manage
+                        } label: {
+                            Label("Manage", systemImage: "ellipsis.circle")
+                        }
+                        .buttonStyle(.secondary)
                     }
-                    .buttonStyle(.secondary)
                 }
             }
             .padding(.vertical, 6)
@@ -128,10 +147,12 @@ private struct WalletSection: View {
 }
 
 /// Create, import, export and delete, in a pop-up. The web wallet keeps these under Manage in its
-/// wallet card. Choosing one swaps this pop-up for that screen.
+/// wallet card. Choosing one opens that screen full screen over this pop-up: Back returns here, and
+/// X closes both.
 private struct ManagePopUp: View {
     @Binding var sheet: HomeView.Sheet?
     @Environment(AppModel.self) private var app
+    @State private var flow: HomeView.Flow?
 
     var body: some View {
         PopUp("Manage", systemImage: "ellipsis.circle") {
@@ -146,11 +167,16 @@ private struct ManagePopUp: View {
                     .disabled(app.wallets.activeWallet == nil)
             }
         }
+        .fullScreenCover(item: $flow) { flow in
+            // Closing the pop-up closes the screen over it too.
+            flow.screen
+                .environment(\.flowExit, FlowExit(returnsToPopUp: true) { sheet = nil })
+        }
     }
 
-    private func row(_ title: String, systemImage: String, opens destination: HomeView.Sheet, role: ButtonRole? = nil) -> some View {
+    private func row(_ title: String, systemImage: String, opens destination: HomeView.Flow, role: ButtonRole? = nil) -> some View {
         Button(role: role) {
-            sheet = destination
+            flow = destination
         } label: {
             Label(title, systemImage: systemImage)
                 .font(.mono(.body))

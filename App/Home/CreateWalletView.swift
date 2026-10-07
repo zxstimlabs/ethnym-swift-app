@@ -4,7 +4,7 @@ import SwiftUI
 /// Generates a 12-word secret phrase and stores it encrypted with the password.
 struct CreateWalletView: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.flowExit) private var flowExit
 
     @State private var name = ""
     @State private var password = ""
@@ -76,12 +76,7 @@ struct CreateWalletView: View {
             }
             .navigationTitle("Create Wallet")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", role: .cancel) { dismiss() }
-                }
-            }
-            .interactiveDismissDisabled(isWorking)
+            .flowToolbar()
             .sensoryFeedback(.success, trigger: created) { _, new in new }
             .sensoryFeedback(.error, trigger: error) { _, new in new != nil }
         }
@@ -114,7 +109,7 @@ struct CreateWalletView: View {
                 app.wallets.add(wallet)
                 if app.wallets.activeWallet == nil { app.wallets.select(wallet.id) }
                 created = true
-                dismiss()
+                flowExit.close()
             } catch {
                 self.error = error.localizedDescription
             }

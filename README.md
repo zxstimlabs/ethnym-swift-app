@@ -50,7 +50,7 @@ Debug builds accept launch arguments that swap in an in-memory model, leaving th
   - `Home/`: wallet picker, balances, receive, and create / import / export / delete.
   - `Send/`: the ETH, token, NFT and Sign forms, pickers and transaction status.
   - `AddressBook/`, `Activity/`, `Backup/`: the other tabs. `Settings/` opens from the header, which every tab shares (`Components/AppHeader.swift`).
-  - `Assets.xcassets/Logo.imageset`: the header logo, `logo-light.svg` and `logo-dark.svg`.
+  - `Assets.xcassets/Logo.imageset`: the header logo, `ethnym-symbol-dark.svg` (black tile, light mode) and `ethnym-symbol-light.svg` (white tile, dark mode).
   - `Components/`, `Theme/`: shared views, JetBrains Mono and the black-and-white theme.
   - `Fonts/`: JetBrains Mono (SIL Open Font License, see `OFL.txt`).
   - `AppIcon.icon`: the app icon, an Icon Composer file. Xcode generates the flat icons for iOS 18 from it.
