@@ -63,32 +63,3 @@ struct FieldHint: View {
         }
     }
 }
-
-/// An ⓘ button that explains a field in a popover anchored to it.
-struct InfoButton: View {
-    let title: String
-    let message: String
-    @State private var isPresented = false
-
-    var body: some View {
-        Button("About \(title)", systemImage: "info.circle") {
-            isPresented = true
-        }
-        .labelStyle(.iconOnly)
-        .foregroundStyle(.secondary)
-        .buttonStyle(.borderless)
-        .popover(isPresented: $isPresented) {
-            VStack(alignment: .leading, spacing: 8) {
-                Label(title, systemImage: "info.circle")
-                    .font(.mono(.subheadline, weight: .semibold))
-                Text(message)
-                    .font(.mono(.footnote))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding()
-            .frame(idealWidth: 320)
-            .presentationCompactAdaptation(.popover)
-        }
-    }
-}

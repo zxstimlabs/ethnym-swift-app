@@ -41,7 +41,7 @@ UI tests, which tour every screen and drive create, import and offline signing:
 xcodebuild test -project Ethnym.xcodeproj -scheme Ethnym -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
-Debug builds accept launch arguments that swap in an in-memory model, leaving the Keychain and files untouched: `-demo` (sample wallets, contacts and activity), `-empty`, `-offline` (with `-empty`), and `-tab addressBook|activity|backup|settings`.
+Debug builds accept launch arguments that swap in an in-memory model, leaving the Keychain and files untouched: `-demo` (sample wallets, contacts and activity), `-empty`, `-offline` (with `-empty`), and `-tab addressBook|send|activity|backup`.
 
 ## Layout
 
@@ -49,7 +49,8 @@ Debug builds accept launch arguments that swap in an in-memory model, leaving th
 - `App/`: the SwiftUI app, one folder per tab plus shared pieces.
   - `Home/`: wallet picker, balances, receive, and create / import / export / delete.
   - `Send/`: the ETH, token, NFT and Sign forms, pickers and transaction status.
-  - `AddressBook/`, `Activity/`, `Backup/`, `Settings/`: the other tabs.
+  - `AddressBook/`, `Activity/`, `Backup/`: the other tabs. `Settings/` opens from the header, which every tab shares (`Components/AppHeader.swift`).
+  - `Assets.xcassets/Logo.imageset`: the header logo, `logo-light.svg` and `logo-dark.svg`.
   - `Components/`, `Theme/`: shared views, JetBrains Mono and the black-and-white theme.
   - `Fonts/`: JetBrains Mono (SIL Open Font License, see `OFL.txt`).
   - `AppIcon.icon`: the app icon, an Icon Composer file. Xcode generates the flat icons for iOS 18 from it.

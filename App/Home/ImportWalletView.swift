@@ -63,6 +63,7 @@ private struct PhraseImport: View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
                 TextField("Wallet name", text: $name)
+                    .textContentType(.username)
                     .textInputAutocapitalization(.words)
                     .onChange(of: name) { touched.insert("name") }
                 FieldHint(prompt: "Please enter a name", error: ContactValidation.validateName(name).map { FieldError($0, isPrompt: true) }, isTouched: touched.contains("name"))

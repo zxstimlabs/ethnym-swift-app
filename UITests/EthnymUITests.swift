@@ -30,6 +30,24 @@ final class EthnymUITests: XCTestCase {
         return element
     }
 
+    /// Next to a username field, Password AutoFill offers a strong password in a sheet that replaces
+    /// the keyboard. Close it and type our own.
+    @MainActor
+    private func typeNewPassword(_ text: String, into field: XCUIElement, in app: XCUIApplication) {
+        field.tap()
+        if app.buttons["GenerateStrongPasswordButton"].waitForExistence(timeout: 2) {
+            app.buttons["xmark"].tap()
+        }
+        field.typeText(text)
+    }
+
+    /// Once that form closes, AutoFill offers to save or update the password. Decline.
+    @MainActor
+    private func declineSavingPassword(in app: XCUIApplication) {
+        let notNow = app.buttons["Not Now"]
+        if notNow.waitForExistence(timeout: 3) { notNow.tap() }
+    }
+
     @MainActor
     private func snapshot(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
@@ -45,6 +63,15 @@ final class EthnymUITests: XCTestCase {
         sleep(4)
         snapshot(app, "01-home")
 
+        // Section info opens in a sheet that X and OK both close.
+        for close in ["Close", "OK"] {
+            app.buttons["About Wallets"].tap()
+            XCTAssertTrue(app.buttons[close].waitForExistence(timeout: 2))
+            if close == "Close" { snapshot(app, "01-home-info") }
+            app.buttons[close].tap()
+            XCTAssertTrue(app.buttons[close].waitForNonExistence(timeout: 2))
+        }
+
         app.buttons["Send"].firstMatch.tap()
         XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 3))
         sleep(2)
@@ -58,22 +85,44 @@ final class EthnymUITests: XCTestCase {
         app.buttons["Sign"].tap()
         sleep(1)
         snapshot(app, "05-send-sign")
-        app.buttons["Close"].tap()
+        app.tabBars.buttons["Home"].tap()
 
         app.buttons["Receive"].firstMatch.tap()
         sleep(1)
         snapshot(app, "06-receive")
-        app.buttons["Done"].tap()
+        app.buttons["Close"].tap()
+
+        app.buttons["Manage"].tap()
+        XCTAssertTrue(app.buttons["Create Wallet"].waitForExistence(timeout: 2))
+        snapshot(app, "06-manage")
+        // Choosing an action swaps the pop-up for that screen.
+        app.buttons["Create Wallet"].tap()
+        XCTAssertTrue(app.textFields["Wallet name"].waitForExistence(timeout: 3))
+        app.buttons["Cancel"].tap()
 
         reveal(app.buttons["NFTs"], in: app).tap()
         sleep(2)
         snapshot(app, "07-nfts")
 
-        for (tab, name) in [("Address Book", "08-address-book"), ("Activity", "09-activity"), ("Backup", "10-backup"), ("Settings", "11-settings")] {
+        for (tab, name) in [("Address Book", "08-address-book"), ("Activity", "09-activity"), ("Backup", "10-backup")] {
             app.tabBars.buttons[tab].tap()
             sleep(1)
             snapshot(app, name)
+            if tab == "Address Book" {
+                app.buttons["Edit"].tap()
+                sleep(1)
+                snapshot(app, "08-address-book-editing")
+                app.buttons["Done"].tap()
+            }
         }
+
+        // Log Out lives in Settings, the header's only button.
+        app.navigationBars.buttons["Settings"].tap()
+        sleep(1)
+        snapshot(app, "11-settings")
+        app.buttons["Log Out"].tap()
+        app.tabBars.buttons["Home"].tap()
+        XCTAssertTrue(app.buttons["Wallet: none selected"].waitForExistence(timeout: 3))
     }
 
     @MainActor
@@ -85,16 +134,15 @@ final class EthnymUITests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 3))
         name.tap()
         name.typeText("Spending")
-        app.secureTextFields["Strong password"].tap()
-        app.secureTextFields["Strong password"].typeText("hunter22")
-        app.secureTextFields["Confirm password"].tap()
-        app.secureTextFields["Confirm password"].typeText("hunter2")
+        typeNewPassword("hunter22", into: app.secureTextFields["Strong password"], in: app)
+        typeNewPassword("hunter2", into: app.secureTextFields["Confirm password"], in: app)
         XCTAssertTrue(app.staticTexts["Passwords don't match"].waitForExistence(timeout: 2))
         app.secureTextFields["Confirm password"].typeText("2")
         snapshot(app, "20-create-wallet")
 
         app.buttons["Create Wallet"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["Spending"].waitForExistence(timeout: 10))
+        declineSavingPassword(in: app)
         snapshot(app, "21-created")
     }
 
@@ -108,8 +156,7 @@ final class EthnymUITests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 3))
         name.tap()
         name.typeText("Imported")
-        app.secureTextFields["Strong password"].tap()
-        app.secureTextFields["Strong password"].typeText(Self.password)
+        typeNewPassword(Self.password, into: app.secureTextFields["Strong password"], in: app)
         let phrase = app.textFields["Enter your secret phrase"]
         phrase.tap()
         phrase.typeText(Self.phrase)
@@ -117,6 +164,7 @@ final class EthnymUITests: XCTestCase {
         app.buttons["Import Wallet"].firstMatch.tap()
 
         XCTAssertTrue(app.staticTexts["Imported"].waitForExistence(timeout: 10))
+        declineSavingPassword(in: app)
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")).firstMatch.waitForExistence(timeout: 2))
 
         // Sign transaction JSON without broadcasting.

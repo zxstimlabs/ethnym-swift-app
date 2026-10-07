@@ -17,11 +17,20 @@ struct BalancesSection: View {
 
     var body: some View {
         Section {
+            SectionIntro("Balances", info: "Ether, then the tokens and NFTs this wallet holds. Add any that aren't listed by their contract address.") {
+                if app.balances.tokensState.isLoading || app.balances.nftsState.isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.house, value: app.balances.tokensState)
+
             Picker("Balances", selection: $kind.animation(.house)) {
                 ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
-            .listRowSeparator(.hidden)
+            .listRowSeparator(.hidden, edges: .bottom)
             .sensoryFeedback(.selection, trigger: kind)
 
             if app.wallets.activeWallet == nil {
@@ -39,17 +48,6 @@ struct BalancesSection: View {
                 case .nfts: NftRows(sheet: $sheet)
                 }
             }
-        } header: {
-            HStack {
-                SectionHeader("Balances")
-                Spacer()
-                if app.balances.tokensState.isLoading || app.balances.nftsState.isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .transition(.opacity)
-                }
-            }
-            .animation(.house, value: app.balances.tokensState)
         }
     }
 }
@@ -61,6 +59,7 @@ private struct TokenRows: View {
     var body: some View {
         let balances = app.balances
         let rows = visibleTokens
+        NativeBalanceRow()
         ForEach(rows) { token in
             TokenBalanceRow(
                 token: token,
@@ -98,6 +97,38 @@ private struct TokenRows: View {
     }
 }
 
+/// Ether, always first in the Tokens list, as on the web wallet.
+private struct NativeBalanceRow: View {
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        let balances = app.balances
+        let currency = app.chain.nativeCurrency
+        BalanceRow(
+            symbol: currency.symbol,
+            name: currency.name,
+            isVerified: true,
+            balance: balances.native,
+            decimals: currency.decimals,
+            isLoading: balances.nativeState.isLoading
+        )
+        .contextMenu {
+            if let native = balances.native {
+                CopyMenuButton(title: "Copy Balance", text: Units.format(native, decimals: currency.decimals))
+            }
+            Button("Refresh", systemImage: "arrow.clockwise") { refresh() }
+        }
+        if let error = balances.nativeState.errorMessage {
+            FieldHint(error, kind: .error)
+        }
+    }
+
+    private func refresh() {
+        guard let address = app.wallets.activeWallet?.address, let service = app.service else { return }
+        Task { await app.balances.refreshNative(address: address, service: service) }
+    }
+}
+
 private struct TokenBalanceRow: View {
     let token: Listed<Token>
     let balance: BigUInt?
@@ -106,38 +137,14 @@ private struct TokenBalanceRow: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 5) {
-                    Text(token.asset.symbol)
-                        .font(.mono(.callout, weight: .semibold))
-                    if token.isVerified {
-                        Image(systemName: "checkmark.seal")
-                            .font(.mono(.caption))
-                            .accessibilityLabel("Verified")
-                    }
-                }
-                Text(token.asset.name)
-                    .font(.mono(.caption))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            Group {
-                if let balance {
-                    Text(Units.format(balance, decimals: token.asset.decimals, maxFractionDigits: 6))
-                        .contentTransition(.numericText())
-                } else {
-                    Text("—")
-                        .foregroundStyle(.secondary)
-                        .loadingPulse(isLoading)
-                }
-            }
-            .font(.mono(.callout, weight: .medium))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-        }
-        .animation(.house, value: balance)
+        BalanceRow(
+            symbol: token.asset.symbol,
+            name: token.asset.name,
+            isVerified: token.isVerified,
+            balance: balance,
+            decimals: token.asset.decimals,
+            isLoading: isLoading
+        )
         .contextMenu {
             CopyMenuButton(title: "Copy Contract Address", text: token.asset.address)
             if let balance {
@@ -162,6 +169,51 @@ private struct TokenBalanceRow: View {
 
     private func remove() {
         withAnimation(.house) { app.assets.removeToken(token.asset.address) }
+    }
+}
+
+/// Symbol, name and amount: one line of the Tokens list.
+private struct BalanceRow: View {
+    let symbol: String
+    let name: String
+    let isVerified: Bool
+    let balance: BigUInt?
+    let decimals: Int
+    let isLoading: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text(symbol)
+                        .font(.mono(.callout, weight: .semibold))
+                    if isVerified {
+                        Image(systemName: "checkmark.seal")
+                            .font(.mono(.caption))
+                            .accessibilityLabel("Verified")
+                    }
+                }
+                Text(name)
+                    .font(.mono(.caption))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Group {
+                if let balance {
+                    Text(Units.format(balance, decimals: decimals, maxFractionDigits: 6))
+                        .contentTransition(.numericText())
+                } else {
+                    Text("—")
+                        .foregroundStyle(.secondary)
+                        .loadingPulse(isLoading)
+                }
+            }
+            .font(.mono(.callout, weight: .medium))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        }
+        .animation(.house, value: balance)
     }
 }
 

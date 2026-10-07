@@ -32,7 +32,8 @@ struct ActivityView: View {
                         .listRowBackground(Color.clear)
                 }
             }
-            .navigationTitle("Activity")
+            .tabTitle("Activity")
+            .toolbar { AppHeader() }
             .sensoryFeedback(.selection, trigger: direction)
         }
     }

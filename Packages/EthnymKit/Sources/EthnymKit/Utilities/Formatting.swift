@@ -1,7 +1,7 @@
 import Foundation
 
 public enum Formatting {
-    /// `0x1234...5678`. Prefer full, chunked addresses; this is for tight single-line spots.
+    /// `0x1234...5678`. Prefer full addresses; this is for tight single-line spots.
     public static func truncateAddress(_ address: String?) -> String {
         guard let address, !address.isEmpty else { return "" }
         return "\(address.prefix(6))...\(address.suffix(4))"

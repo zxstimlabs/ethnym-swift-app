@@ -8,7 +8,7 @@ struct HomeView: View {
         case importWallet
         case export
         case delete
-        case send
+        case manage
         case receive
         case addToken
         case addCollection
@@ -18,7 +18,6 @@ struct HomeView: View {
 
     @Environment(AppModel.self) private var app
     @State private var sheet: Sheet?
-    @Namespace private var zoom
 
     var body: some View {
         NavigationStack {
@@ -26,7 +25,7 @@ struct HomeView: View {
                 if app.wallets.wallets.isEmpty {
                     WelcomeSection(sheet: $sheet)
                 } else {
-                    WalletSection(sheet: $sheet, zoom: zoom)
+                    WalletSection(sheet: $sheet)
                     if !app.wallets.walletsNeedingMigration.isEmpty {
                         MigrationSection()
                     }
@@ -35,44 +34,11 @@ struct HomeView: View {
             }
             .animation(.house, value: app.wallets.activeWalletID)
             .animation(.house, value: app.wallets.wallets.count)
-            .navigationTitle("Wallets")
-            .toolbar { toolbar }
+            .tabTitle("Wallets")
+            .toolbar { AppHeader() }
             .refreshable { await app.refreshBalances() }
             .sheet(item: $sheet) { sheet in
                 content(for: sheet)
-            }
-        }
-    }
-
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        if app.settings.offlineMode {
-            ToolbarItem(placement: .topBarLeading) {
-                Label("Offline", systemImage: "wifi.slash")
-                    .labelStyle(.titleAndIcon)
-                    .font(.mono(.caption, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu("Manage", systemImage: "ellipsis.circle") {
-                Section {
-                    Button("Create Wallet", systemImage: "plus") { sheet = .create }
-                    Button("Import Wallet", systemImage: "square.and.arrow.down") { sheet = .importWallet }
-                }
-                if !app.wallets.wallets.isEmpty {
-                    Section {
-                        Button("Export", systemImage: "square.and.arrow.up") { sheet = .export }
-                        Button("Log Out", systemImage: "rectangle.portrait.and.arrow.right") {
-                            app.wallets.select(nil)
-                        }
-                        .disabled(app.wallets.activeWallet == nil)
-                    }
-                    Section {
-                        Button("Delete Wallet", systemImage: "trash", role: .destructive) { sheet = .delete }
-                            .disabled(app.wallets.activeWallet == nil)
-                    }
-                }
             }
         }
     }
@@ -84,8 +50,8 @@ struct HomeView: View {
         case .importWallet: ImportWalletView()
         case .export: ExportWalletView()
         case .delete: DeleteWalletView()
-        case .send: SendView().navigationTransition(.zoom(sourceID: Sheet.send, in: zoom))
-        case .receive: ReceiveView().navigationTransition(.zoom(sourceID: Sheet.receive, in: zoom))
+        case .manage: ManagePopUp(sheet: $sheet)
+        case .receive: ReceiveView()
         case .addToken: AddCustomTokenView()
         case .addCollection: AddCustomNftView()
         }
@@ -112,50 +78,98 @@ private struct WelcomeSection: View {
     }
 }
 
-/// The wallet picker, the active address, its ether balance, and Receive / Send.
+/// The wallet picker, the active address, and Receive / Manage. Balances are in their own section.
 private struct WalletSection: View {
     @Binding var sheet: HomeView.Sheet?
-    let zoom: Namespace.ID
     @Environment(AppModel.self) private var app
 
     var body: some View {
         Section {
+            SectionIntro("Wallets", info: "The wallet you're using. Switch wallets here, or create, import and export them under Manage.") {
+                if app.settings.offlineMode {
+                    Tag(text: "Offline", systemImage: "wifi.slash")
+                }
+            }
+
             WalletPicker()
 
-            if let wallet = app.wallets.activeWallet {
-                VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 14) {
+                if let wallet = app.wallets.activeWallet {
                     HStack(alignment: .top, spacing: 12) {
-                        AddressText(address: wallet.address, style: .footnote)
+                        AddressText(address: wallet.address, style: .caption)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         CopyButton(text: wallet.address)
                             .buttonStyle(.borderless)
                     }
-                    EtherBalance()
-                    HStack(spacing: 10) {
-                        Button {
-                            sheet = .receive
-                        } label: {
-                            Label("Receive", systemImage: "qrcode")
-                        }
-                        .buttonStyle(.secondary)
-                        .matchedTransitionSource(id: HomeView.Sheet.receive, in: zoom)
-
-                        Button {
-                            sheet = .send
-                        } label: {
-                            Label("Send", systemImage: "arrow.up.right")
-                        }
-                        .buttonStyle(.primary)
-                        .matchedTransitionSource(id: HomeView.Sheet.send, in: zoom)
-                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .padding(.vertical, 6)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                // Manage stays with no wallet selected, to create or import one.
+                HStack(spacing: 10) {
+                    Button {
+                        sheet = .receive
+                    } label: {
+                        Label("Receive", systemImage: "qrcode")
+                    }
+                    .buttonStyle(.primary)
+                    .disabled(app.wallets.activeWallet == nil)
+
+                    Button {
+                        sheet = .manage
+                    } label: {
+                        Label("Manage", systemImage: "ellipsis.circle")
+                    }
+                    .buttonStyle(.secondary)
+                }
             }
-        } header: {
-            SectionHeader("Wallet")
+            .padding(.vertical, 6)
         }
+    }
+}
+
+/// Create, import, export and delete, in a pop-up. The web wallet keeps these under Manage in its
+/// wallet card. Choosing one swaps this pop-up for that screen.
+private struct ManagePopUp: View {
+    @Binding var sheet: HomeView.Sheet?
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        PopUp("Manage", systemImage: "ellipsis.circle") {
+            VStack(spacing: 0) {
+                row("Create Wallet", systemImage: "plus", opens: .create)
+                Divider()
+                row("Import Wallet", systemImage: "square.and.arrow.down", opens: .importWallet)
+                Divider()
+                row("Export", systemImage: "square.and.arrow.up", opens: .export)
+                Divider()
+                row("Delete Wallet", systemImage: "trash", opens: .delete, role: .destructive)
+                    .disabled(app.wallets.activeWallet == nil)
+            }
+        }
+    }
+
+    private func row(_ title: String, systemImage: String, opens destination: HomeView.Sheet, role: ButtonRole? = nil) -> some View {
+        Button(role: role) {
+            sheet = destination
+        } label: {
+            Label(title, systemImage: systemImage)
+                .font(.mono(.body))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 14)
+                .contentShape(.rect)
+        }
+        .buttonStyle(PopUpRowButtonStyle())
+    }
+}
+
+/// A full-width row: red for destructive actions, dimmed while pressed or disabled.
+private struct PopUpRowButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(configuration.role == .destructive ? Color.red : Color.primary)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.5 : 1) : 0.3)
     }
 }
 
@@ -189,39 +203,6 @@ private struct WalletPicker: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Wallet: \(app.wallets.activeWallet?.name ?? "none selected")")
         .sensoryFeedback(.selection, trigger: app.wallets.activeWalletID)
-    }
-}
-
-/// The big ether number. Digits roll when it changes.
-private struct EtherBalance: View {
-    @Environment(AppModel.self) private var app
-
-    var body: some View {
-        let balances = app.balances
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Group {
-                if let native = balances.native {
-                    Text(Units.format(native, decimals: 18, maxFractionDigits: 6))
-                        .contentTransition(.numericText())
-                } else {
-                    Text(app.settings.offlineMode ? "—" : "0.0000")
-                        .foregroundStyle(.secondary)
-                        .loadingPulse(balances.nativeState.isLoading)
-                }
-            }
-            .font(.mono(size: 34, weight: .semibold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-
-            Text(app.chain.nativeCurrency.symbol)
-                .font(.mono(.title3, weight: .medium))
-                .foregroundStyle(.secondary)
-        }
-        .animation(.house, value: balances.native)
-        .accessibilityElement(children: .combine)
-        if let error = balances.nativeState.errorMessage {
-            FieldHint(error, kind: .error)
-        }
     }
 }
 

@@ -1,9 +1,11 @@
 import EthnymKit
 import SwiftUI
 
-/// RPC endpoints, offline mode, the VPN relay placeholder and appearance.
+/// The active wallet and Log Out, RPC endpoints, offline mode, the VPN relay placeholder and
+/// appearance. Opens from the header.
 struct SettingsView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
     @AppStorage("theme") private var theme: AppTheme = .system
     @State private var newName = ""
     @State private var newURL = ""
@@ -13,6 +15,31 @@ struct SettingsView: View {
         @Bindable var settings = app.settings
         NavigationStack {
             Form {
+                Section {
+                    if let wallet = app.wallets.activeWallet {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(wallet.name)
+                                .font(.mono(.callout, weight: .semibold))
+                            AddressText(address: wallet.address, style: .caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("No wallet selected")
+                            .foregroundStyle(.secondary)
+                    }
+                    // Deselects the wallet, as the web wallet's Log Out does.
+                    Button("Log Out", systemImage: "rectangle.portrait.and.arrow.right") {
+                        app.wallets.select(nil)
+                        dismiss()
+                    }
+                    .disabled(app.wallets.activeWallet == nil)
+                } header: {
+                    SectionHeader("Wallet")
+                } footer: {
+                    Text("Logging out deselects the wallet. Its keystore stays on this device.")
+                        .font(.mono(.caption))
+                }
+
                 Section {
                     LabeledContent {
                         Tag(text: settings.settings.activeRpc.map { $0.name ?? "custom" } ?? "default")
@@ -153,6 +180,11 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 }

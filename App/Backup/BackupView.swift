@@ -22,9 +22,12 @@ struct BackupView: View {
                     } label: {
                         BackupRow(title: "Cloud sync", systemImage: "icloud", detail: "Coming soon.")
                     }
+                } header: {
+                    SectionHeader("Backup")
                 }
             }
-            .navigationTitle("Backup")
+            .tabTitle("Backup")
+            .toolbar { AppHeader() }
         }
     }
 }
@@ -100,6 +103,7 @@ private struct EncryptPhraseSections: View {
     var body: some View {
         Section {
             TextField("Wallet name", text: $name)
+                .textContentType(.username)
                 .textInputAutocapitalization(.words)
             PasswordField(title: "Strong password", text: $password, isNewPassword: true)
             TextField("Secret phrase", text: $phrase, axis: .vertical)

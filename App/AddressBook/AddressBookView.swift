@@ -6,17 +6,36 @@ struct AddressBookView: View {
     @Environment(AppModel.self) private var app
     @State private var search = ""
     @State private var isAdding = false
+    @State private var editMode: EditMode = .inactive
 
     var body: some View {
         NavigationStack {
             let contacts = ContactValidation.filter(app.contacts.contacts, query: search)
             List {
-                ForEach(contacts) { contact in
-                    ContactRow(contact: contact)
+                Section {
+                    ForEach(contacts) { contact in
+                        ContactRow(contact: contact)
+                    }
+                    .onDelete { offsets in
+                        withAnimation(.house) { app.contacts.delete(atOffsets: offsets, in: contacts) }
+                    }
+                } header: {
+                    if !contacts.isEmpty {
+                        HStack(spacing: 16) {
+                            SectionHeader("Address Book")
+                            Spacer()
+                            EditButton()
+                            Button("Add Contact", systemImage: "plus") { isAdding = true }
+                                .labelStyle(.titleAndIcon)
+                        }
+                        .font(.mono(.footnote, weight: .semibold))
+                        .textCase(nil)
+                    }
                 }
-                .onDelete { offsets in
-                    withAnimation(.house) { app.contacts.delete(atOffsets: offsets, in: contacts) }
-                }
+            }
+            .environment(\.editMode, $editMode)
+            .onChange(of: app.contacts.contacts.isEmpty) { _, isEmpty in
+                if isEmpty { editMode = .inactive }
             }
             .overlay {
                 if contacts.isEmpty {
@@ -33,17 +52,8 @@ struct AddressBookView: View {
             }
             .animation(.house, value: contacts)
             .searchable(text: $search, prompt: "Name, address, tag or note")
-            .navigationTitle("Address Book")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add Contact", systemImage: "plus") { isAdding = true }
-                }
-                if !app.contacts.contacts.isEmpty {
-                    ToolbarItem(placement: .topBarLeading) {
-                        EditButton()
-                    }
-                }
-            }
+            .tabTitle("Address Book")
+            .toolbar { AppHeader() }
             .sheet(isPresented: $isAdding) {
                 AddContactView()
             }

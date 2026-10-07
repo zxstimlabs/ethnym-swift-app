@@ -14,7 +14,6 @@ struct SendView: View {
     }
 
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
     @State private var kind: Kind = .eth
 
     var body: some View {
@@ -32,32 +31,23 @@ struct SendView: View {
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
-                Picker("Send", selection: $kind) {
-                    ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
+                VStack(alignment: .leading, spacing: 8) {
+                    if let wallet = app.wallets.activeWallet {
+                        SectionHeader("Send from \(wallet.name)")
+                            .lineLimit(1)
+                            .padding(.horizontal, 4)
+                    }
+                    Picker("Send", selection: $kind) {
+                        ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 .background(.bar)
             }
-            .navigationTitle("Send")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-                if let wallet = app.wallets.activeWallet {
-                    ToolbarItem(placement: .principal) {
-                        VStack(spacing: 0) {
-                            Text("Send")
-                                .font(.mono(.headline, weight: .semibold))
-                            Text("from \(wallet.name)")
-                                .font(.mono(.caption2))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
+            .tabTitle("Send")
+            .toolbar { AppHeader() }
             .sensoryFeedback(.selection, trigger: kind)
         }
     }

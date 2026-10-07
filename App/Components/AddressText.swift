@@ -1,15 +1,29 @@
 import EthnymKit
 import SwiftUI
 
-/// A full address, never truncated, set in groups of four so it can be read and compared:
-/// `0x f39F d6e5 1aad 88F6 …`. The prefix is dimmed; the text is selectable.
+/// How full addresses are set. A setting will choose; until then they're continuous.
+enum AddressFormat {
+    /// `0xf39Fd6e51aad88F6…`, unbroken.
+    case continuous
+    /// `0x f39F d6e5 1aad 88F6 …`, in groups of four with the prefix dimmed.
+    case chunked
+}
+
+extension EnvironmentValues {
+    @Entry var addressFormat: AddressFormat = .continuous
+}
+
+/// A full address, never truncated, in the `addressFormat` from the environment. The text is
+/// selectable.
 struct AddressText: View {
     let address: String
     var style: Font.TextStyle = .footnote
     var weight: Font.Weight = .regular
 
+    @Environment(\.addressFormat) private var format
+
     var body: some View {
-        Text(chunked)
+        Text(format == .chunked ? chunked : AttributedString(address))
             .font(.mono(style, weight: weight))
             .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
@@ -49,7 +63,8 @@ struct SectionHeader: View {
             }
         }
         .font(.mono(.footnote, weight: .semibold))
-        .foregroundStyle(.secondary)
+        // Concrete black or white: list headers resolve the hierarchical `.primary` to their gray.
+        .foregroundStyle(Color.primary)
         .textCase(nil)
     }
 }
