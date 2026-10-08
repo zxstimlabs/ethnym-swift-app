@@ -16,6 +16,9 @@ struct SignTransactionForm: View {
     var body: some View {
         Form {
             Section {
+                SectionIntro("Transaction JSON", info: app.settings.offlineMode
+                    ? "Offline: every field (nonce, gas, maxFeePerGas, maxPriorityFeePerGas) must be set. The signed transaction is shown for broadcasting elsewhere."
+                    : "Missing nonce, gas and fees are filled in from the network. Sent as an EIP-1559 transaction.")
                 TextField(Self.placeholder, text: $json, axis: .vertical)
                     .font(.mono(.caption))
                     .lineLimit(5 ... 14)
@@ -28,13 +31,6 @@ struct SignTransactionForm: View {
                 }
                 .labelStyle(.titleAndIcon)
                 FieldHint(prompt: PreparedTransaction.ValidationError.empty.localizedDescription, error: validationError, isTouched: isTouched)
-            } header: {
-                SectionHeader("Transaction JSON")
-            } footer: {
-                Text(app.settings.offlineMode
-                     ? "Offline: every field (nonce, gas, maxFeePerGas, maxPriorityFeePerGas) must be set. The signed transaction is shown for broadcasting elsewhere."
-                     : "Missing nonce, gas and fees are filled in from the network. Sent as an EIP-1559 transaction.")
-                    .font(.mono(.caption))
             }
 
             if case let .success(transaction) = parsed {
@@ -105,39 +101,40 @@ private struct TransactionDetailsSection: View {
 
     var body: some View {
         Section {
-            LabeledContent("Chain", value: Formatting.chainLabel(transaction.chainId))
-            LabeledContent("To") {
-                AddressText(address: transaction.to, style: .caption)
-            }
-            if let from = transaction.from ?? transaction.account {
-                LabeledContent("From") {
-                    AddressText(address: from, style: .caption)
+            SectionIntro("Transaction details", info: "What you're about to sign, read from the JSON above. Check it before you sign.")
+            Group {
+                LabeledContent("Chain", value: Formatting.chainLabel(transaction.chainId))
+                LabeledContent("To") {
+                    AddressText(address: transaction.to, style: .caption)
+                }
+                if let from = transaction.from ?? transaction.account {
+                    LabeledContent("From") {
+                        AddressText(address: from, style: .caption)
+                    }
+                }
+                if let value = transaction.valueAmount, value > 0 {
+                    LabeledContent("Value", value: "\(Units.formatEther(value)) ETH")
+                }
+                if let type = transaction.type {
+                    LabeledContent("Type", value: type)
+                }
+                if let gas = transaction.gasAmount {
+                    LabeledContent("Gas", value: String(gas))
+                }
+                if let nonce = transaction.nonce {
+                    LabeledContent("Nonce", value: String(nonce))
+                }
+                if let fee = transaction.maxFeeAmount {
+                    LabeledContent("Max fee per gas", value: "\(Units.formatGwei(fee)) gwei")
+                }
+                if let tip = transaction.maxPriorityFeeAmount {
+                    LabeledContent("Max priority fee", value: "\(Units.formatGwei(tip)) gwei")
+                }
+                if let data = transaction.data, data.count > 2 {
+                    LabeledContent("Data", value: "\((data.count - 2) / 2) bytes")
                 }
             }
-            if let value = transaction.valueAmount, value > 0 {
-                LabeledContent("Value", value: "\(Units.formatEther(value)) ETH")
-            }
-            if let type = transaction.type {
-                LabeledContent("Type", value: type)
-            }
-            if let gas = transaction.gasAmount {
-                LabeledContent("Gas", value: String(gas))
-            }
-            if let nonce = transaction.nonce {
-                LabeledContent("Nonce", value: String(nonce))
-            }
-            if let fee = transaction.maxFeeAmount {
-                LabeledContent("Max fee per gas", value: "\(Units.formatGwei(fee)) gwei")
-            }
-            if let tip = transaction.maxPriorityFeeAmount {
-                LabeledContent("Max priority fee", value: "\(Units.formatGwei(tip)) gwei")
-            }
-            if let data = transaction.data, data.count > 2 {
-                LabeledContent("Data", value: "\((data.count - 2) / 2) bytes")
-            }
-        } header: {
-            SectionHeader("Transaction details")
+            .font(.mono(.footnote))
         }
-        .font(.mono(.footnote))
     }
 }

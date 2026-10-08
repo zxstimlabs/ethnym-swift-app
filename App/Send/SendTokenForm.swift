@@ -19,6 +19,8 @@ struct SendTokenForm: View {
     var body: some View {
         Form {
             Section {
+                SectionIntro("Token", info: "The ERC-20 token to send. Pick one from the list, or enter its contract address or ENS name; its name, symbol and your balance load from the contract.")
+
                 VStack(alignment: .leading, spacing: 10) {
                     Button {
                         isPicking = true
@@ -60,8 +62,6 @@ struct SendTokenForm: View {
                         FieldHint(error, kind: .error)
                     }
                 }
-            } header: {
-                SectionHeader("Token")
             }
 
             AmountSection(

@@ -69,6 +69,8 @@ struct AmountSection: View {
 
     var body: some View {
         Section {
+            SectionIntro("Sending", info: "How much to send. 25%, 50%, 75% and Max fill in that share of your balance; the arrow reloads it.")
+
             VStack(alignment: .leading, spacing: 12) {
                 TextField("0", text: $text)
                     .font(.mono(size: 32, weight: .semibold))
@@ -116,8 +118,6 @@ struct AmountSection: View {
                 FieldHint(prompt: AmountValidation.emptyMessage, error: error, isTouched: isTouched)
             }
             .padding(.vertical, 4)
-        } header: {
-            SectionHeader("Sending")
         }
     }
 }
@@ -130,6 +130,8 @@ struct GasPresetSection: View {
     var body: some View {
         @Bindable var model = model
         Section {
+            SectionIntro("Gas preset", info: "The most you'll pay per unit of gas. Fast includes the transaction sooner; Slow costs less but can wait if the network is busy. You pay only the current base fee plus a small tip, up to this cap.")
+
             HStack(spacing: 8) {
                 ForEach(GasPriceModel.Preset.allCases) { preset in
                     Button(preset.title) {
@@ -160,11 +162,6 @@ struct GasPresetSection: View {
             if let error = model.errorMessage {
                 FieldHint(error, kind: .error)
             }
-        } header: {
-            HStack(spacing: 6) {
-                SectionHeader("Gas preset")
-                InfoButton(title: "Gas preset", message: "The most you'll pay per unit of gas. Fast includes the transaction sooner; Slow costs less but can wait if the network is busy. You pay only the current base fee plus a small tip, up to this cap.")
-            }
         }
     }
 }
@@ -183,9 +180,8 @@ struct SubmitSection: View {
 
     var body: some View {
         Section {
+            SectionIntro("Password", info: "Unlocks this wallet's keystore on this device to sign the transaction. It's cleared once the transaction is signed.")
             PasswordField(title: "Wallet password", text: $password)
-        } header: {
-            SectionHeader("Password")
         } footer: {
             if let disabledReason {
                 Text(disabledReason)

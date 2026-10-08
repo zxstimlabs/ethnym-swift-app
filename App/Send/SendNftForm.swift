@@ -20,6 +20,8 @@ struct SendNftForm: View {
     var body: some View {
         Form {
             Section {
+                SectionIntro("NFT contract", info: "The ERC-721 collection the NFT belongs to. Pick an NFT you own, which fills in its token ID too, or a listed collection, or enter the contract address or ENS name.")
+
                 VStack(alignment: .leading, spacing: 10) {
                     Button {
                         isPicking = true
@@ -54,11 +56,11 @@ struct SendNftForm: View {
                     .font(.mono(.footnote))
                     .foregroundStyle(.secondary)
                 }
-            } header: {
-                SectionHeader("NFT contract")
             }
 
             Section {
+                SectionIntro("Token ID", info: "The NFT's number within the collection. Below it you'll see who owns that token; only its owner can send it.")
+
                 VStack(alignment: .leading, spacing: 10) {
                     TextField("0", text: $tokenId)
                         .font(.mono(size: 32, weight: .semibold))
@@ -77,8 +79,6 @@ struct SendNftForm: View {
                     .font(.mono(.footnote))
                     FieldHint(prompt: "Please enter the NFT token ID", error: tokenIdError, isTouched: tokenIdTouched)
                 }
-            } header: {
-                SectionHeader("Token ID")
             }
 
             RecipientSection(text: $recipient, resolution: resolution)

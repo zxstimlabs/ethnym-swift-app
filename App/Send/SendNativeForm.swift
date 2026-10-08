@@ -97,17 +97,13 @@ struct RecipientSection: View {
 
     var body: some View {
         Section {
+            SectionIntro("Recipient", info: "Enter the recipient's address, or an ENS name such as vitalik.eth. Names resolve to an address automatically; check it before sending. You can also scan a QR code or pick from your address book.")
             AddressField(
                 placeholder: "Address (0x...) or ENS (.eth)",
                 text: $text,
                 resolution: resolution,
                 error: RecipientValidation.validate(text)
             )
-        } header: {
-            HStack(spacing: 6) {
-                SectionHeader("Recipient")
-                InfoButton(title: "Recipient", message: "Enter the recipient's address, or an ENS name such as vitalik.eth. Names resolve to an address automatically; check it before sending. You can also scan a QR code or pick from your address book.")
-            }
         }
     }
 }

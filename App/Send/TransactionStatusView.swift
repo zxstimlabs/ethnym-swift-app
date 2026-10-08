@@ -8,6 +8,8 @@ struct TransactionStatusSection: View {
 
     var body: some View {
         Section {
+            SectionIntro("Status", info: "Where this transaction stands: signed with your password, then confirmed on the network. Tap the hash to open it in the block explorer.")
+
             if let error = flow.errorMessage {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "exclamationmark.octagon")
@@ -37,8 +39,6 @@ struct TransactionStatusSection: View {
                 SignedTransactionOutput(raw: raw)
                     .transition(.blurReplace)
             }
-        } header: {
-            SectionHeader("Status")
         }
         .animation(.house, value: flow.phase)
         .animation(.house, value: flow.errorMessage)
