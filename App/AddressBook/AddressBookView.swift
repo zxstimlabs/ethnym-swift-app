@@ -1,7 +1,8 @@
 import EthnymKit
 import SwiftUI
 
-/// Saved contacts, searchable by name, address, tag or note.
+/// Saved contacts, searchable by name, address, tag or note. Laid out like Home: one card with a
+/// title, the search field and Add, then a row per contact.
 struct AddressBookView: View {
     @Environment(AppModel.self) private var app
     @State private var search = ""
@@ -13,23 +14,34 @@ struct AddressBookView: View {
             let contacts = ContactValidation.filter(app.contacts.contacts, query: search)
             List {
                 Section {
+                    SectionIntro("Address Book", info: "Addresses you send to often. They show up in every recipient field. Search matches names, addresses, tags and notes.") {
+                        if !app.contacts.contacts.isEmpty {
+                            EditButton()
+                        }
+                    }
+
+                    HStack(spacing: 10) {
+                        ContactSearchField(text: $search)
+                        Button("Add Contact", systemImage: "plus") { isAdding = true }
+                            .buttonStyle(.icon)
+                    }
+                    .listRowSeparator(.hidden, edges: .bottom)
+
+                    if app.contacts.contacts.isEmpty {
+                        Text("No contacts yet. Tap + to save one.")
+                            .font(.mono(.footnote))
+                            .foregroundStyle(.secondary)
+                    } else if contacts.isEmpty {
+                        Text("No contacts match “\(search.trimmed)”.")
+                            .font(.mono(.footnote))
+                            .foregroundStyle(.secondary)
+                    }
+
                     ForEach(contacts) { contact in
                         ContactRow(contact: contact)
                     }
                     .onDelete { offsets in
                         withAnimation(.house) { app.contacts.delete(atOffsets: offsets, in: contacts) }
-                    }
-                } header: {
-                    if !contacts.isEmpty {
-                        HStack(spacing: 16) {
-                            SectionHeader("Address Book")
-                            Spacer()
-                            EditButton()
-                            Button("Add Contact", systemImage: "plus") { isAdding = true }
-                                .labelStyle(.titleAndIcon)
-                        }
-                        .font(.mono(.footnote, weight: .semibold))
-                        .textCase(nil)
                     }
                 }
             }
@@ -37,27 +49,40 @@ struct AddressBookView: View {
             .onChange(of: app.contacts.contacts.isEmpty) { _, isEmpty in
                 if isEmpty { editMode = .inactive }
             }
-            .overlay {
-                if contacts.isEmpty {
-                    if app.contacts.contacts.isEmpty {
-                        EmptyState("No contacts yet", systemImage: "person.crop.rectangle.stack", message: "Save addresses you send to often. They show up in every recipient field.") {
-                            Button("Add Contact") { isAdding = true }
-                                .buttonStyle(.primary)
-                                .frame(maxWidth: 220)
-                        }
-                    } else {
-                        ContentUnavailableView.search(text: search)
-                    }
-                }
-            }
             .animation(.house, value: contacts)
-            .searchable(text: $search, prompt: "Name, address, tag or note")
+            .scrollDismissesKeyboard(.immediately)
             .tabTitle("Address Book")
             .toolbar { AppHeader() }
             .sheet(isPresented: $isAdding) {
                 AddContactView()
             }
         }
+    }
+}
+
+/// Filters the contacts as you type.
+private struct ContactSearchField: View {
+    @Binding var text: String
+    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 44
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search address book", text: $text)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            if !text.isEmpty {
+                Button("Clear search", systemImage: "xmark.circle.fill") { text = "" }
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(.secondary)
+                    .buttonStyle(.borderless)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: height)
+        .background(Theme.fill, in: .rect(cornerRadius: 12))
     }
 }
 

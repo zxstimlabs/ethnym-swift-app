@@ -117,6 +117,15 @@ final class EthnymUITests: XCTestCase {
             sleep(1)
             snapshot(app, name)
             if tab == "Address Book" {
+                let search = app.textFields["Search address book"]
+                search.tap()
+                search.typeText("bob")
+                XCTAssertTrue(app.staticTexts["Alice"].waitForNonExistence(timeout: 2))
+                XCTAssertTrue(app.staticTexts["Bob"].exists)
+                app.buttons["Clear search"].tap()
+                XCTAssertTrue(app.staticTexts["Alice"].waitForExistence(timeout: 2))
+                // The keyboard's Search key closes it, uncovering the tab bar.
+                search.typeText("\n")
                 app.buttons["Edit"].tap()
                 sleep(1)
                 snapshot(app, "08-address-book-editing")
@@ -128,6 +137,10 @@ final class EthnymUITests: XCTestCase {
         app.navigationBars.buttons["Settings"].tap()
         sleep(1)
         snapshot(app, "11-settings")
+        app.swipeUp()
+        sleep(1)
+        snapshot(app, "11-settings-more")
+        app.swipeDown()
         app.buttons["Log Out"].tap()
         app.tabBars.buttons["Home"].tap()
         XCTAssertTrue(app.buttons["Wallet: none selected"].waitForExistence(timeout: 3))

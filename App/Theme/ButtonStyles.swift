@@ -80,12 +80,34 @@ struct ChipButtonStyle: ButtonStyle {
     }
 }
 
+/// A square icon button in the primary colors, beside a field such as the contacts search. It
+/// grows with Dynamic Type, as the field beside it does.
+struct IconButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @ScaledMetric(relativeTo: .body) private var side: CGFloat = 44
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .labelStyle(.iconOnly)
+            .font(.mono(.body, weight: .semibold))
+            .frame(width: side, height: side)
+            .foregroundStyle(Color(.systemBackground))
+            .background(Color.primary.opacity(isEnabled ? 1 : 0.3), in: .rect(cornerRadius: 12))
+            .modifier(PressFeedback(isPressed: configuration.isPressed))
+            .contentShape(.rect)
+    }
+}
+
 extension ButtonStyle where Self == PrimaryButtonStyle {
     static var primary: PrimaryButtonStyle { PrimaryButtonStyle() }
 }
 
 extension ButtonStyle where Self == SecondaryButtonStyle {
     static var secondary: SecondaryButtonStyle { SecondaryButtonStyle() }
+}
+
+extension ButtonStyle where Self == IconButtonStyle {
+    static var icon: IconButtonStyle { IconButtonStyle() }
 }
 
 extension ButtonStyle where Self == ChipButtonStyle {
